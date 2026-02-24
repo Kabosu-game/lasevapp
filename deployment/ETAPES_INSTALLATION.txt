@@ -1,0 +1,77 @@
+==========================================
+ÉTAPES D'INSTALLATION SUR LE SERVEUR VPS
+==========================================
+
+Vous êtes déjà connecté au serveur !
+Maintenant suivez ces étapes dans l'ordre:
+
+1. CLONER LE DÉPÔT GITHUB
+--------------------------
+cd /var/www
+git clone https://github.com/Macairemtx/lasev.git
+cd lasev/deployment
+chmod +x install-server.sh
+./install-server.sh
+
+
+OU si /var/www n'existe pas ou n'est pas accessible:
+
+cd /root
+git clone https://github.com/Macairemtx/lasev.git
+cd lasev/deployment
+chmod +x install-server.sh
+./install-server.sh
+
+
+2. ALTERNATIVE: Installation manuelle sans cloner
+--------------------------------------------------
+# Si git n'est pas installé, installez-le d'abord:
+apt update
+apt install -y git
+
+# Puis clonez le dépôt:
+cd /var/www  # ou /root
+git clone https://github.com/Macairemtx/lasev.git
+cd lasev/deployment
+chmod +x install-server.sh
+./install-server.sh
+
+
+3. EN CAS D'ERREUR
+------------------
+# Vérifier que vous êtes au bon endroit:
+pwd
+
+# Vérifier que git est installé:
+git --version
+
+# Si git n'est pas installé:
+apt update
+apt install -y git
+
+# Puis cloner à nouveau:
+cd /var/www  # ou dans /root
+git clone https://github.com/Macairemtx/lasev.git
+cd lasev/deployment
+
+
+4. APRÈS LE CLONAGE RÉUSSI
+---------------------------
+# Rendre le script exécutable:
+chmod +x install-server.sh
+
+# Exécuter l'installation:
+./install-server.sh
+
+# Le script va tout installer automatiquement!
+
+
+==========================================
+COMMANDE COMPLÈTE EN UNE LIGNE:
+==========================================
+cd /var/www && git clone https://github.com/Macairemtx/lasev.git && cd lasev/deployment && chmod +x install-server.sh && ./install-server.sh
+
+OU si /var/www n'existe pas:
+cd /root && git clone https://github.com/Macairemtx/lasev.git && cd lasev/deployment && chmod +x install-server.sh && ./install-server.sh
+
+

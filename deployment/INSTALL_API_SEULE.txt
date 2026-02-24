@@ -1,0 +1,67 @@
+==========================================
+INSTALLATION DE L'API LARAVEL UNIQUEMENT
+==========================================
+
+Vous êtes connecté au serveur VPS.
+Voici les commandes à exécuter pour installer SEULEMENT l'API:
+
+
+1. CLONER LE DÉPÔT GITHUB
+--------------------------
+cd /var/www
+git clone https://github.com/Macairemtx/lasev.git
+cd lasev/deployment
+chmod +x install-api-only.sh
+./install-api-only.sh
+
+
+OU EN UNE SEULE COMMANDE:
+--------------------------
+cd /var/www && git clone https://github.com/Macairemtx/lasev.git && cd lasev/deployment && chmod +x install-api-only.sh && ./install-api-only.sh
+
+
+SI /var/www N'EXISTE PAS:
+--------------------------
+cd /root && git clone https://github.com/Macairemtx/lasev.git && cd lasev/deployment && chmod +x install-api-only.sh && ./install-api-only.sh
+
+
+SI GIT N'EST PAS INSTALLÉ:
+--------------------------
+apt update
+apt install -y git
+cd /var/www
+git clone https://github.com/Macairemtx/lasev.git
+cd lasev/deployment
+chmod +x install-api-only.sh
+./install-api-only.sh
+
+
+==========================================
+CE QUE LE SCRIPT VA INSTALLER:
+==========================================
+
+✅ PHP 8.1 et toutes les extensions nécessaires
+✅ Composer
+✅ MySQL/MariaDB
+✅ Nginx
+✅ Configuration de l'API Laravel uniquement
+✅ Base de données lasev_db
+✅ Migrations et seeders
+✅ Configuration Nginx pointant vers /var/www/lasev/api/public
+✅ Utilisateur admin (admin@lasev.com / Admin@2025)
+
+
+==========================================
+APRÈS L'INSTALLATION:
+==========================================
+
+API: http://72.60.124.186/api
+Admin: http://72.60.124.186/admin
+
+Identifiants admin:
+  Email: admin@lasev.com
+  Mot de passe: Admin@2025
+
+⚠️  Changez ces mots de passe après la première connexion!
+
+
