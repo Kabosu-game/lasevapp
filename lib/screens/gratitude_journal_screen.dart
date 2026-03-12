@@ -73,8 +73,8 @@ class _GratitudeJournalScreenState extends State<GratitudeJournalScreen> {
           children: [
             // Contenu principal
             Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
+              decoration: const BoxDecoration(
+                color: Colors.white,
               ),
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20.0),

@@ -20,9 +20,20 @@ class Meditation {
   factory Meditation.fromJson(Map<String, dynamic> json) {
     // API Laravel : audio_url/image_url en appends, ou media.file_path en fallback
     String audioUrl = json['audio_url']?.toString() ?? '';
-    if (audioUrl.isEmpty && json['media'] != null && json['media'] is Map) {
-      final media = json['media'] as Map<String, dynamic>;
-      audioUrl = media['file_path']?.toString() ?? '';
+    if (audioUrl.isEmpty && json['media'] != null) {
+      if (json['media'] is Map) {
+        final media = json['media'] as Map<String, dynamic>;
+        audioUrl = media['file_path']?.toString() ?? media['url']?.toString() ?? '';
+      } else if (json['media'] is List && (json['media'] as List).isNotEmpty) {
+        final first = (json['media'] as List).first;
+        if (first is Map) {
+          final m = first as Map<String, dynamic>;
+          audioUrl = m['file_path']?.toString() ?? m['url']?.toString() ?? '';
+        }
+      }
+    }
+    if (audioUrl.isNotEmpty) {
+      audioUrl = audioUrl.trim();
     }
     return Meditation(
       id: json['id'] ?? 0,

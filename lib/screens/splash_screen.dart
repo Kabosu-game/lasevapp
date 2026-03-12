@@ -29,8 +29,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _initializeVideo() async {
     try {
-      // Essayer de charger la vidéo vidéo_animation.mp4
-      _controller = VideoPlayerController.asset('assets/videos/video_animation.mp4');
+      // Même fond vidéo que le reste de l'application
+      _controller = VideoPlayerController.asset('assets/videos/fond-animation.mp4');
       await _controller.initialize();
       _controller.setLooping(true);
       _controller.play();

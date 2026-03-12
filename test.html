@@ -1,0 +1,148 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap');
+
+.categories-grid{
+  font-family:'Roboto',sans-serif;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:20px;
+  margin-top:30px;
+}
+.category-box{
+  border-radius:4px;
+  overflow:hidden;
+  background:#fff;
+  box-shadow:0 4px 18px rgba(0,0,0,0.10);
+  text-align:left;
+  transition:transform 0.3s,box-shadow 0.3s;
+  position:relative;
+}
+.category-box:hover{
+  transform:translateY(-6px);
+  box-shadow:0 10px 30px rgba(0,0,0,0.15);
+}
+.category-img-wrap{
+  position:relative;
+  overflow:hidden;
+}
+.category-box img{
+  width:100%;
+  height:200px;
+  object-fit:cover;
+  display:block;
+  transition:transform 0.5s ease;
+}
+.category-box:hover img{
+  transform:scale(1.05);
+}
+.category-img-overlay{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(to bottom,transparent 50%,rgba(0,0,0,0.45) 100%);
+  pointer-events:none;
+}
+.category-content{
+  padding:16px 18px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-top:3px solid #d62828;
+}
+.category-title{
+  font-size:16px;
+  font-weight:700;
+  color:#1a1a1a;
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+}
+.category-btn{
+  text-decoration:none;
+  font-size:13px;
+  font-weight:700;
+  color:#d62828;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+  transition:gap 0.25s,color 0.2s;
+  white-space:nowrap;
+}
+.category-btn:hover{
+  color:#b91c1c;
+  gap:10px;
+}
+.category-btn::after{
+  content:"→";
+  font-size:15px;
+}
+@media(max-width:900px){
+  .categories-grid{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:540px){
+  .categories-grid{grid-template-columns:1fr;}
+}
+</style>
+
+<div class="categories-grid">
+  <div class="category-box">
+    <div class="category-img-wrap">
+      <img src="https://altess-container.com/wp-content/uploads/2026/03/Containers-solutions-Bungalow-bureaux-Gamme-premium-RE2020.jpg">
+      <div class="category-img-overlay"></div>
+    </div>
+    <div class="category-content">
+      <div class="category-title">Bureaux modulaires</div>
+      <a href="https://boisbuche-centreatlantique.com/product-category/robot-tondeuse/" class="category-btn">Voir</a>
+    </div>
+  </div>
+  <div class="category-box">
+    <div class="category-img-wrap">
+      <img src="https://altess-container.com/wp-content/uploads/2026/03/40_pieds.jpg">
+      <div class="category-img-overlay"></div>
+    </div>
+    <div class="category-content">
+      <div class="category-title">Conteneur piscine</div>
+      <a href="https://boisbuche-centreatlantique.com/product-category/poele-a-bois/" class="category-btn">Voir</a>
+    </div>
+  </div>
+  <div class="category-box">
+    <div class="category-img-wrap">
+      <img src="https://altess-container.com/wp-content/uploads/2026/03/header-froid-capsa-scaled-2.jpg">
+      <div class="category-img-overlay"></div>
+    </div>
+    <div class="category-content">
+      <div class="category-title">Conteneurs Frigorifiques</div>
+      <a href="https://boisbuche-centreatlantique.com/product-category/poele-a-granule/" class="category-btn">Voir</a>
+    </div>
+  </div>
+  <div class="category-box">
+    <div class="category-img-wrap">
+      <img src="https://altess-container.com/wp-content/uploads/2026/03/Conteneur-Maritime-Port-de-Lome-Togo.png">
+      <div class="category-img-overlay"></div>
+    </div>
+    <div class="category-content">
+      <div class="category-title">Conteneurs Maritimes</div>
+      <a href="https://boisbuche-centreatlantique.com/product-category/granules-de-bois/" class="category-btn">Voir</a>
+    </div>
+  </div>
+  <div class="category-box">
+    <div class="category-img-wrap">
+      <img src="https://altess-container.com/wp-content/uploads/2026/03/capsa-container-bar-easy-mazette-1-1.jpeg">
+      <div class="category-img-overlay"></div>
+    </div>
+    <div class="category-content">
+      <div class="category-title">Conteneurs pour bar/restaurant</div>
+      <a href="https://boisbuche-centreatlantique.com/product-category/abri-de-jardin/" class="category-btn">Voir</a>
+    </div>
+  </div>
+  <div class="category-box">
+    <div class="category-img-wrap">
+      <img src="https://altess-container.com/wp-content/uploads/2026/03/banner.jpg">
+      <div class="category-img-overlay"></div>
+    </div>
+    <div class="category-content">
+      <div class="category-title">Module sanitaire/WC</div>
+      <a href="https://boisbuche-centreatlantique.com/product-category/pergola/" class="category-btn">Voir</a>
+    </div>
+  </div>
+</div>

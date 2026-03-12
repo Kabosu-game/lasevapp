@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../models/meditation.dart';
 import '../screens/timer_screen.dart';
+import '../services/api_service.dart';
 import '../widgets/video_background.dart';
 
-class MeditationDetailScreen extends StatelessWidget {
+class MeditationDetailScreen extends StatefulWidget {
   final Meditation meditation;
-  
-  // Couleur principale du projet
-  static const Color primaryColor = Color(0xFF265533);
 
   const MeditationDetailScreen({
     super.key,
@@ -15,7 +14,61 @@ class MeditationDetailScreen extends StatelessWidget {
   });
 
   @override
+  State<MeditationDetailScreen> createState() => _MeditationDetailScreenState();
+}
+
+class _MeditationDetailScreenState extends State<MeditationDetailScreen> {
+  static const Color primaryColor = Color(0xFF265533);
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isPlaying = false;
+
+  String get _fullAudioUrl {
+    final u = widget.meditation.audioUrl;
+    if (u.isEmpty) return '';
+    if (u.startsWith('http')) return u;
+    final base = ApiService.imageBaseUrl;
+    return base.endsWith('/') ? '$base$u' : '$base/$u';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _audioPlayer.onPlayerStateChanged.listen((state) {
+      if (mounted) {
+        setState(() => _isPlaying = state == PlayerState.playing);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggleAudio() async {
+    final url = _fullAudioUrl;
+    if (url.isEmpty) return;
+    try {
+      if (_isPlaying) {
+        await _audioPlayer.pause();
+      } else {
+        await _audioPlayer.play(UrlSource(url));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Audio: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final meditation = widget.meditation;
+    final hasAudio = _fullAudioUrl.isNotEmpty;
+
     return VideoBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -33,7 +86,7 @@ class MeditationDetailScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Image placeholder
+                // Image ou placeholder
                 Container(
                   width: double.infinity,
                   height: 200,
@@ -51,10 +104,7 @@ class MeditationDetailScreen extends StatelessWidget {
                     color: Colors.white,
                   ),
                 ),
-                
                 const SizedBox(height: 24),
-                
-                // Titre et durée
                 Row(
                   children: [
                     Expanded(
@@ -85,10 +135,7 @@ class MeditationDetailScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                
                 const SizedBox(height: 16),
-                
-                // Description
                 Text(
                   meditation.description,
                   style: const TextStyle(
@@ -97,10 +144,12 @@ class MeditationDetailScreen extends StatelessWidget {
                     color: Colors.black87,
                   ),
                 ),
-                
-                const SizedBox(height: 32),
-                
-                // Bouton de démarrage
+                if (hasAudio) ...[
+                  const SizedBox(height: 24),
+                  _buildAudioPlayer(),
+                  const SizedBox(height: 24),
+                ],
+                const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
@@ -141,6 +190,51 @@ class MeditationDetailScreen extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAudioPlayer() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: primaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: primaryColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.audiotrack, color: primaryColor, size: 32),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Audio de méditation',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _isPlaying ? 'Lecture en cours...' : 'Appuyez pour lire',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton.filled(
+            onPressed: _toggleAudio,
+            icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
+            color: Colors.white,
+            style: IconButton.styleFrom(backgroundColor: primaryColor),
+          ),
+        ],
       ),
     );
   }

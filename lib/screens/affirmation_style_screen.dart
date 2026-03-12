@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/video_background.dart';
+
+const String _kAffirmationStyleIndex = 'affirmation_style_index';
 
 class AffirmationStyleScreen extends StatefulWidget {
   const AffirmationStyleScreen({super.key});
@@ -118,12 +121,20 @@ class _AffirmationStyleScreenState extends State<AffirmationStyleScreen> {
     ];
 
     return InkWell(
-      onTap: () {
-        // Logique pour sélectionner le style
+      onTap: () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt(_kAffirmationStyleIndex, index);
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Style "${styleNames[index]}" sélectionné'),
             backgroundColor: primaryColor,
+          ),
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AffirmationCategoriesScreen(styleIndex: index),
           ),
         );
       },
@@ -228,11 +239,17 @@ class _AffirmationStyleScreenState extends State<AffirmationStyleScreen> {
     return icons[index];
   }
 
-  void _navigateToPredefinedCategories() {
+  void _navigateToPredefinedCategories() async {
+    int styleIndex = 0;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      styleIndex = prefs.getInt(_kAffirmationStyleIndex) ?? 0;
+    } catch (_) {}
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const AffirmationCategoriesScreen(),
+        builder: (context) => AffirmationCategoriesScreen(styleIndex: styleIndex),
       ),
     );
   }
@@ -248,7 +265,9 @@ class _AffirmationStyleScreenState extends State<AffirmationStyleScreen> {
 }
 
 class AffirmationCategoriesScreen extends StatelessWidget {
-  const AffirmationCategoriesScreen({super.key});
+  final int styleIndex;
+
+  const AffirmationCategoriesScreen({super.key, this.styleIndex = 0});
 
   static const Color primaryColor = Color(0xFF265533);
 
@@ -391,6 +410,7 @@ class AffirmationCategoriesScreen extends StatelessWidget {
                     builder: (context) => AffirmationCardsScreen(
                       categoryName: category['name'] as String,
                       categoryColor: category['color'] as Color,
+                      styleIndex: styleIndex,
                     ),
                   ),
                 );
@@ -415,11 +435,13 @@ class AffirmationCategoriesScreen extends StatelessWidget {
 class AffirmationCardsScreen extends StatelessWidget {
   final String categoryName;
   final Color categoryColor;
+  final int styleIndex;
 
   const AffirmationCardsScreen({
     super.key,
     required this.categoryName,
     required this.categoryColor,
+    this.styleIndex = 0,
   });
 
   static const Color primaryColor = Color(0xFF265533);
@@ -427,6 +449,7 @@ class AffirmationCardsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<String> affirmations = _getAffirmationsForCategory(categoryName);
+    final int index = styleIndex.clamp(0, 3);
 
     return VideoBackground(
       child: Scaffold(
@@ -442,8 +465,8 @@ class AffirmationCardsScreen extends StatelessWidget {
           ),
           child: PageView.builder(
             itemCount: affirmations.length,
-            itemBuilder: (context, index) {
-              return _buildAffirmationCard(affirmations[index]);
+            itemBuilder: (context, pageIndex) {
+              return _buildAffirmationCard(affirmations[pageIndex], index);
             },
           ),
         ),
@@ -451,26 +474,22 @@ class AffirmationCardsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAffirmationCard(String affirmation) {
+  Widget _buildAffirmationCard(String affirmation, int styleIndex) {
+    final List<Color> gradientColors = _getStyleGradientColors(styleIndex);
+    final BorderRadius borderRadius = _getStyleBorderRadius(styleIndex);
+    final IconData icon = _getStyleIcon(styleIndex);
+    final List<BoxShadow> shadows = _getStyleShadows(styleIndex);
+
     return Container(
       margin: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: borderRadius,
         gradient: LinearGradient(
-          colors: [
-            categoryColor,
-            categoryColor.withOpacity(0.7),
-          ],
+          colors: gradientColors,
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: categoryColor.withOpacity(0.3),
-            blurRadius: 20,
-            spreadRadius: 10,
-          ),
-        ],
+        boxShadow: shadows,
       ),
       child: Padding(
         padding: const EdgeInsets.all(32.0),
@@ -478,9 +497,9 @@ class AffirmationCardsScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.auto_awesome,
+              icon,
               size: 80,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withOpacity(0.9),
             ),
             const SizedBox(height: 32),
             Text(
@@ -498,18 +517,14 @@ class AffirmationCardsScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
-                  onPressed: () {
-                    // Logique pour favoriser
-                  },
+                  onPressed: () {},
                   icon: const Icon(Icons.favorite_border),
                   color: Colors.white,
                   iconSize: 30,
                 ),
                 const SizedBox(width: 20),
                 IconButton(
-                  onPressed: () {
-                    // Logique pour partager
-                  },
+                  onPressed: () {},
                   icon: const Icon(Icons.share),
                   color: Colors.white,
                   iconSize: 30,
@@ -520,6 +535,57 @@ class AffirmationCardsScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<Color> _getStyleGradientColors(int index) {
+    switch (index) {
+      case 0: // Classique
+        return [Colors.blue.shade700, Colors.blue.shade900];
+      case 1: // Moderne
+        return [Colors.purple.shade400, Colors.purple.shade700];
+      case 2: // Nature
+        return [const Color(0xFF265533), const Color(0xFF4CAF50)];
+      case 3: // Spirituel
+        return [Colors.orange.shade700, Colors.deepPurple.shade700];
+      default:
+        return [primaryColor, primaryColor.withOpacity(0.7)];
+    }
+  }
+
+  BorderRadius _getStyleBorderRadius(int index) {
+    switch (index) {
+      case 0: // Classique
+        return BorderRadius.circular(12);
+      case 1: // Moderne
+        return BorderRadius.circular(24);
+      case 2: // Nature
+        return BorderRadius.circular(20);
+      case 3: // Spirituel
+        return BorderRadius.circular(28);
+      default:
+        return BorderRadius.circular(20);
+    }
+  }
+
+  IconData _getStyleIcon(int index) {
+    switch (index) {
+      case 0: return Icons.style;
+      case 1: return Icons.blur_on;
+      case 2: return Icons.nature;
+      case 3: return Icons.self_improvement;
+      default: return Icons.auto_awesome;
+    }
+  }
+
+  List<BoxShadow> _getStyleShadows(int index) {
+    final Color color = _getStyleGradientColors(index).first;
+    return [
+      BoxShadow(
+        color: color.withOpacity(0.4),
+        blurRadius: index == 1 ? 24 : 20,
+        spreadRadius: index == 3 ? 4 : 10,
+      ),
+    ];
   }
 
   List<String> _getAffirmationsForCategory(String category) {

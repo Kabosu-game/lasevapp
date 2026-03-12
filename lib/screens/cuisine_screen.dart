@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../services/cuisine_service.dart';
 import '../widgets/video_background.dart';
 
@@ -81,60 +82,84 @@ class _CuisineScreenState extends State<CuisineScreen> {
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_error != null) ...[
-                          Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Text(
-                                _error!,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.red.shade700),
+                    child: AnimationLimiter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (_error != null) ...[
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Text(
+                                  _error!,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(color: Colors.red.shade700),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                          // Section Plats avec animation d'entrée
+                          AnimationConfiguration.staggeredList(
+                            position: 0,
+                            duration: const Duration(milliseconds: 450),
+                            delay: const Duration(milliseconds: 100),
+                            child: SlideAnimation(
+                              verticalOffset: -50.0,
+                              child: FadeInAnimation(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Nos plats',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: primaryColor,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    if (_dishes.isEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(vertical: 24),
+                                        child: Center(
+                                          child: Text(
+                                            'Aucun plat pour le moment.',
+                                            style: TextStyle(color: Colors.grey.shade600),
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  childAspectRatio: 0.72,
+                                  crossAxisSpacing: 8,
+                                  mainAxisSpacing: 8,
+                                ),
+                                itemCount: _dishes.length,
+                                itemBuilder: (context, index) {
+                                  final dish = _dishes[index];
+                                  return AnimationConfiguration.staggeredGrid(
+                                    position: index,
+                                    duration: const Duration(milliseconds: 400),
+                                    delay: const Duration(milliseconds: 80),
+                                    columnCount: 3,
+                                    child: ScaleAnimation(
+                                      child: _buildDishCard(dish),
+                                    ),
+                                  );
+                                },
+                              ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 16),
-                        ],
-                        // Section Plats
-                        Text(
-                          'Nos plats',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: primaryColor,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        if (_dishes.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 24),
-                            child: Center(
-                              child: Text(
-                                'Aucun plat pour le moment.',
-                                style: TextStyle(color: Colors.grey.shade600),
-                              ),
-                            ),
-                          )
-                        else
-                          GridView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 3,
-                              childAspectRatio: 0.72,
-                              crossAxisSpacing: 8,
-                              mainAxisSpacing: 8,
-                            ),
-                            itemCount: _dishes.length,
-                            itemBuilder: (context, index) {
-                              final dish = _dishes[index];
-                              return _buildDishCard(dish);
-                            },
-                          ),
-                        const SizedBox(height: 32),
-                        // Section Chefs
+                          const SizedBox(height: 32),
+                          // Section Chefs
                         Text(
                           'Nos chefs cuisiniers',
                           style: TextStyle(
@@ -170,6 +195,7 @@ class _CuisineScreenState extends State<CuisineScreen> {
                     ),
                   ),
                 ),
+                  ),
         ),
       ),
     );

@@ -1,5 +1,5 @@
 name: meditation_app
-description: Application mobile de méditation
+description: Application Lasèv
 version: 1.0.0+1
 
 environment:
@@ -21,6 +21,7 @@ dependencies:
   flutter_stripe: ^11.0.0
   webview_flutter: ^4.8.0
   dio: ^5.3.0
+  image_picker: ^1.0.7
 
 dev_dependencies:
   flutter_test:

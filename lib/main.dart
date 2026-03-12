@@ -25,7 +25,7 @@ class MeditationApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       child: MaterialApp(
-        title: 'Meditation App',
+        title: 'Lasèv',
         theme: ThemeData(
           primarySwatch: Colors.green,
           useMaterial3: true,
