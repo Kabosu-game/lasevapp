@@ -7,8 +7,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ApiService {
   static const String _apiHost = 'https://lasevapi.o-sterebois.fr';
   static String get baseUrl => '$_apiHost/api';
-  /// Base URL pour les images (sans /api)
+  /// Base URL pour les images et médias (sans /api)
   static String get imageBaseUrl => _apiHost;
+
+  /// Construit l'URL d'un média (image/audio) à partir d'un chemin relatif ou d'une URL.
+  /// Les chemins sont servis par la route Laravel /serve-storage/{path}.
+  static String? mediaUrl(String? path) {
+    if (path == null || path.trim().isEmpty) return null;
+    final p = path.trim();
+    if (p.startsWith('http')) return p;
+    final rel = p.startsWith('storage/') ? p.replaceFirst('storage/', '') : p;
+    final base = imageBaseUrl.endsWith('/') ? imageBaseUrl : '${imageBaseUrl}/';
+    return '${base}serve-storage/$rel';
+  }
 
   static const String _tokenKey = 'auth_token';
   static const String _userIdKey = 'user_id';

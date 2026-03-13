@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/video_background.dart';
+import '../services/api_service.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final Map<String, dynamic> event;
@@ -89,6 +90,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final List<dynamic> rawMedia = (widget.event['media'] as List?) ?? const [];
+    final List<Map<String, dynamic>> media = rawMedia
+        .where((m) => m is Map<String, dynamic>)
+        .map((m) => m as Map<String, dynamic>)
+        .toList();
+
     return VideoBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -258,41 +265,79 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        SizedBox(
-                          height: 200,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: 4,
-                            itemBuilder: (context, index) {
-                              return Container(
-                                width: 150,
-                                margin: const EdgeInsets.only(right: 12),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  color: Colors.grey.shade200,
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.image,
-                                      size: 60,
-                                      color: Colors.grey.shade400,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Image ${index + 1}',
-                                      style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontSize: 14,
+                        if (media.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              'Aucune image de galerie pour le moment.',
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          )
+                        else
+                          SizedBox(
+                            height: 200,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: media.length,
+                              itemBuilder: (context, index) {
+                                final item = media[index];
+                                final String? path =
+                                    (item['file_path'] ?? item['url'])?.toString();
+                                if (path == null || path.trim().isEmpty) {
+                                  return const SizedBox.shrink();
+                                }
+                                final String url = ApiService.mediaUrl(path) ?? path;
+
+                                return Container(
+                                  width: 180,
+                                  margin: const EdgeInsets.only(right: 12),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    color: Colors.grey.shade200,
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      Image.network(
+                                        url,
+                                        fit: BoxFit.cover,
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                                      if (item['title'] != null &&
+                                          (item['title'] as String).trim().isNotEmpty)
+                                        Align(
+                                          alignment: Alignment.bottomLeft,
+                                          child: Container(
+                                            width: double.infinity,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  Colors.black.withOpacity(0.5),
+                                            ),
+                                            child: Text(
+                                              (item['title'] as String).trim(),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),

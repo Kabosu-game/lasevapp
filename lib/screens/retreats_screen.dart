@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/video_background.dart';
 import 'retreat_form_screen.dart';
 import '../services/retreat_plan_service.dart';
+import '../services/api_service.dart';
 
 class RetreatsScreen extends StatefulWidget {
   const RetreatsScreen({super.key});
@@ -240,6 +241,10 @@ class _RetreatsScreenState extends State<RetreatsScreen> {
   }
 
   Widget _buildRetreatCard(BuildContext context, Map<String, dynamic> retreat) {
+    final String? coverImage = (retreat['image'] as String?)?.trim();
+    final bool hasCover = coverImage != null && coverImage.isNotEmpty;
+    final String? coverUrl = hasCover ? ApiService.mediaUrl(coverImage) : null;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
@@ -256,52 +261,76 @@ class _RetreatsScreenState extends State<RetreatsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image header
-          Container(
+          // Image header (image de couverture depuis l'API si disponible)
+          SizedBox(
             height: 200,
-            decoration: BoxDecoration(
+            child: ClipRRect(
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
               ),
-              gradient: LinearGradient(
-                colors: [
-                  primaryColor.withOpacity(0.8),
-                  primaryColor.withOpacity(0.6),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Stack(
-              children: [
-                Center(
-                  child: Icon(
-                    Icons.spa,
-                    size: 80,
-                    color: Colors.white.withOpacity(0.3),
-                  ),
-                ),
-                Positioned(
-                  top: 16,
-                  right: 16,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (hasCover && coverUrl != null)
+                    Image.network(
+                      coverUrl,
+                      fit: BoxFit.cover,
+                    )
+                  else
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            primaryColor.withOpacity(0.8),
+                            primaryColor.withOpacity(0.6),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.spa,
+                          size: 80,
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+                      ),
                     ),
-                    child: Text(
-                      retreat['duration'],
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: primaryColor,
+                  // Overlay léger pour lisibilité du texte
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.black.withOpacity(0.4),
+                          Colors.transparent,
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
                       ),
                     ),
                   ),
-                ),
-              ],
+                  Positioned(
+                    top: 16,
+                    right: 16,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        retreat['duration'],
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: primaryColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           

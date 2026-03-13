@@ -51,64 +51,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       'name': 'Meditation',
       'image': 'assets/images/logotar.png',
       'type': 'media',
-      'content': [
-        {'title': 'Méditation guidée 10 min', 'type': 'audio', 'duration': '10:00'},
-        {'title': 'Respiration profonde', 'type': 'video', 'duration': '15:00'},
-        {'title': 'Scan corporel', 'type': 'audio', 'duration': '20:00'},
-      ],
+      'content': [], // Uniquement les méditations de l'API (plus de données fictives)
     },
     {
       'slug': 'articles',
       'name': 'Le pouvoir secret',
       'image': 'assets/images/logotar.png',
       'type': 'articles',
-      'content': [
-        {
-          'title': 'La loi de l\'attraction : Le pouvoir de vos pensées',
-          'excerpt': 'Découvrez comment vos pensées créent votre réalité et comment utiliser la loi de l\'attraction',
-          'content': 'La loi de l\'attraction est l\'une des lois les plus puissantes de l\'univers. Elle stipule que vos pensées et émotions attirent des expériences similaires dans votre vie. En cultivant des pensées positives et en vous concentrant sur ce que vous désirez, vous pouvez manifester vos rêves et transformer votre réalité.',
-          'hasVideo': true,
-          'readTime': '8 min',
-          'views': 3421,
-          'tags': ['loi de l\'attraction', 'pensées', 'réalité', 'manifestation'],
-        },
-        {
-          'title': 'Le secret de la manifestation',
-          'excerpt': 'Les techniques avancées pour manifester vos désirs les plus profonds',
-          'content': 'La manifestation est un art qui demande pratique et compréhension. Découvrez les techniques utilisées par les plus grands maîtres spirituels pour attirer l\'abondance, l\'amour et le succès dans votre vie. Apprenez à aligner vos vibrations avec vos désirs.',
-          'hasVideo': false,
-          'readTime': '12 min',
-          'views': 2876,
-          'tags': ['manifestation', 'désirs', 'techniques', 'abondance'],
-        },
-        {
-          'title': 'Le pouvoir de la gratitude',
-          'excerpt': 'Comment la gratitude transforme votre vie et attire plus de bonheur',
-          'content': 'La gratitude est l\'un des secrets les plus puissants pour attirer le bonheur et l\'abondance. En pratiquant régulièrement la gratitude, vous changez votre perspective et ouvrez la porte à plus de bénédictions dans votre vie.',
-          'hasVideo': true,
-          'readTime': '6 min',
-          'views': 1987,
-          'tags': ['gratitude', 'bonheur', 'transformation', 'bénédictions'],
-        },
-        {
-          'title': 'La vibration de l\'abondance',
-          'excerpt': 'Comment élever votre fréquence vibratoire pour attirer la prospérité',
-          'content': 'L\'univers fonctionne sur des fréquences vibratoires. Découvrez comment élever votre vibration pour attirer naturellement l\'abondance financière, les opportunités et les relations harmonieuses dans votre existence.',
-          'hasVideo': false,
-          'readTime': '10 min',
-          'views': 1654,
-          'tags': ['vibration', 'abondance', 'fréquence', 'prospérité'],
-        },
-        {
-          'title': 'Le pouvoir du subconscient',
-          'excerpt': 'Programmez votre esprit pour le succès et le bonheur durable',
-          'content': 'Votre subconscient contrôle 95% de vos actions et décisions. Apprenez à reprogrammer vos croyances limitantes pour créer automatiquement le succès et le bonheur dans tous les aspects de votre vie.',
-          'hasVideo': true,
-          'readTime': '15 min',
-          'views': 2234,
-          'tags': ['subconscient', 'programmation', 'succès', 'croyances'],
-        },
-      ],
+      'content': [], // Rempli par les articles réels de l'API (_blogArticles)
     },
     {
       'slug': 'gratitude',
@@ -267,8 +217,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             final slug = item['slug']?.toString();
             if (slug == null || slug.isEmpty) continue;
             String? imageUrl = item['image']?.toString()?.replaceAll(r'\', '/');
-            if (imageUrl != null && imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-              imageUrl = '${ApiService.imageBaseUrl}/serve-storage/${imageUrl.trim()}';
+            if (imageUrl != null && imageUrl.isNotEmpty) {
+              imageUrl = ApiService.mediaUrl(imageUrl) ?? imageUrl;
             }
             map[slug] = {
               'name': item['name']?.toString() ?? '',
@@ -360,10 +310,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       _isLoadingBlogArticles = true;
     });
     try {
-      print('🟡 Chargement des blogs depuis l\'API avec filtre pouvoir-secret...');
+      print('🟡 Chargement de tous les blogs depuis l\'API...');
       final service = BlogService();
-      // Charger uniquement les articles de la catégorie "pouvoir-secret"
-      final blogs = await service.getBlogs(category: 'pouvoir-secret');
+      // Charger tous les articles de blog (toutes catégories confondues)
+      final blogs = await service.getBlogs();
       print('🟢 ${blogs.length} blogs chargés depuis l\'API');
       if (!mounted) return;
       setState(() {
@@ -425,6 +375,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       ? '${e.price!.toStringAsFixed(0)}€'
                       : 'Gratuit',
                   'contact': '',
+                  // Galerie d'images depuis l'API (utilisée dans l'écran de détail)
+                  'media': e.media ?? const [],
                 })
             .toList();
       });
@@ -1534,8 +1486,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _showMeditationMedia(Map<String, dynamic> category) {
-    final mediaList = category['content'] as List<Map<String, dynamic>>;
-    
+    final provider = context.read<MeditationProvider>();
+    final meditations = provider.meditations;
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -1544,43 +1497,95 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             title: Text(category['name']),
             backgroundColor: primaryColor,
             foregroundColor: Colors.white,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: () => provider.fetchMeditations(),
+                tooltip: 'Actualiser',
+              ),
+            ],
           ),
-          body: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: mediaList.length,
-            itemBuilder: (context, index) {
-              final media = mediaList[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: Icon(
-                    media['type'] == 'audio' ? Icons.headphones : Icons.play_circle,
-                    color: primaryColor,
-                    size: 40,
-                  ),
-                  title: Text(media['title']),
-                  subtitle: Text('${media['type']} • ${media['duration']}'),
-                  trailing: const Icon(Icons.play_arrow),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Lecture: ${media['title']}'),
-                        backgroundColor: primaryColor,
+          body: provider.isLoading
+              ? const Center(child: CircularProgressIndicator(color: primaryColor))
+              : provider.error != null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              provider.error!,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.red.shade700),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () => provider.fetchMeditations(),
+                              style: ElevatedButton.styleFrom(backgroundColor: primaryColor, foregroundColor: Colors.white),
+                              child: const Text('Réessayer'),
+                            ),
+                          ],
+                        ),
                       ),
-                    );
-                  },
-                ),
-              );
-            },
-          ),
+                    )
+                  : meditations.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Text(
+                              'Aucune méditation pour le moment.\nLes méditations sont ajoutées depuis l\'admin.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                            ),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: meditations.length,
+                          itemBuilder: (context, index) {
+                            final meditation = meditations[index];
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              child: ListTile(
+                                leading: Icon(
+                                  Icons.self_improvement,
+                                  color: primaryColor,
+                                  size: 40,
+                                ),
+                                title: Text(meditation.title),
+                                subtitle: Text('${meditation.duration} min • ${meditation.category.isNotEmpty ? meditation.category : 'Méditation'}'),
+                                trailing: const Icon(Icons.arrow_forward_ios, size: 18),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MeditationDetailScreen(meditation: meditation),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
         ),
       ),
     );
   }
 
   void _showArticles(Map<String, dynamic> category) {
-    final articles = category['content'] as List<Map<String, dynamic>>;
-    
+    // Uniquement les articles de l'API (catégorie pouvoir-secret). Ne jamais utiliser de liste en dur.
+    final articles = List<Map<String, dynamic>>.from(
+      _blogArticles.map((a) => {
+              'title': a['title'],
+              'excerpt': a['excerpt'],
+              'content': a['content'],
+              'hasVideo': a['hasVideo'] ?? false,
+              'readTime': a['readTime'] ?? '5 min',
+              'views': a['views'] ?? 0,
+              'tags': a['tags'] is List ? List<String>.from(a['tags']!) : <String>[],
+            }));
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -1590,7 +1595,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             backgroundColor: primaryColor,
             foregroundColor: Colors.white,
           ),
-          body: ListView.builder(
+          body: articles.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Text(
+                      'Aucun article pour le moment.\nLes articles sont publiés depuis l\'admin.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                    ),
+                  ),
+                )
+              : ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: articles.length,
             itemBuilder: (context, index) {

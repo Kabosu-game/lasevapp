@@ -14,8 +14,8 @@ class Dish {
 
   factory Dish.fromJson(Map<String, dynamic> json) {
     String? imageUrl = json['image']?.toString()?.replaceAll(r'\', '/');
-    if (imageUrl != null && imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-      imageUrl = '${ApiService.imageBaseUrl}/serve-storage/${imageUrl.trim()}';
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      imageUrl = ApiService.mediaUrl(imageUrl) ?? imageUrl;
     }
     return Dish(
       id: json['id'] ?? 0,
@@ -41,8 +41,8 @@ class Chef {
 
   factory Chef.fromJson(Map<String, dynamic> json) {
     String? imageUrl = json['image']?.toString()?.replaceAll(r'\', '/');
-    if (imageUrl != null && imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-      imageUrl = '${ApiService.imageBaseUrl}/serve-storage/${imageUrl.trim()}';
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      imageUrl = ApiService.mediaUrl(imageUrl) ?? imageUrl;
     }
     return Chef(
       id: json['id'] ?? 0,

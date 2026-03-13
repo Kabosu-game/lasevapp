@@ -89,30 +89,47 @@ class Blog {
 
 /// Service pour récupérer les blogs depuis l'API Laravel
 class BlogService {
-  /// Récupérer tous les blogs
+  /// Récupérer tous les blogs, optionnellement filtrés par catégorie (ex: pouvoir-secret)
   Future<List<Blog>> getBlogs({String? category}) async {
     try {
-      final endpoint = category != null 
-          ? 'blogs?category=$category' 
+      final endpoint = category != null && category.isNotEmpty
+          ? 'blogs?category=${Uri.encodeComponent(category)}'
           : 'blogs';
       final response = await ApiService.get(endpoint);
-      
-      if (response is List) {
-        return response
-            .map((json) => Blog.fromJson(json as Map<String, dynamic>))
-            .toList();
-      } else if (response is Map && response.containsKey('data')) {
-        final data = response['data'];
-        if (data is List) {
-          return data
-              .map((json) => Blog.fromJson(json as Map<String, dynamic>))
-              .toList();
-        }
+
+      List<Blog> list = BlogService.parseBlogList(response);
+      if (category != null && category.isNotEmpty && list.isEmpty) {
+        // Fallback : charger tous les blogs et filtrer côté client (si l’API a un autre format de catégorie)
+        final all = await ApiService.get('blogs');
+        list = BlogService.parseBlogList(all);
+        final catLower = category.toLowerCase().replaceAll(RegExp(r'[\s_]+'), '-');
+        list = list.where((b) {
+          final c = (b.category ?? '').toLowerCase().replaceAll(RegExp(r'[\s_]+'), '-');
+          return c == catLower || c.contains('pouvoir');
+        }).toList();
       }
-      return [];
+      return list;
     } catch (e) {
       throw Exception('Erreur lors de la récupération des blogs: $e');
     }
+  }
+
+  /// Exposé pour les tests. Parse la réponse API (List ou { data: List }).
+  static List<Blog> parseBlogList(dynamic response) {
+    if (response is List) {
+      return response
+          .map((json) => Blog.fromJson(json as Map<String, dynamic>))
+          .toList();
+    }
+    if (response is Map && response.containsKey('data')) {
+      final data = response['data'];
+      if (data is List) {
+        return data
+            .map((json) => Blog.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
+    }
+    return [];
   }
 
   /// Récupérer un blog par son ID

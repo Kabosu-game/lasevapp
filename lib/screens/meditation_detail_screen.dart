@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:audioplayers/audioplayers.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/meditation.dart';
 import '../screens/timer_screen.dart';
 import '../services/api_service.dart';
@@ -21,21 +23,35 @@ class _MeditationDetailScreenState extends State<MeditationDetailScreen> {
   static const Color primaryColor = Color(0xFF265533);
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlaying = false;
+  Duration _duration = Duration.zero;
+  Duration _position = Duration.zero;
 
   String get _fullAudioUrl {
     final u = widget.meditation.audioUrl;
     if (u.isEmpty) return '';
-    if (u.startsWith('http')) return u;
-    final base = ApiService.imageBaseUrl;
-    return base.endsWith('/') ? '$base$u' : '$base/$u';
+    return ApiService.mediaUrl(u) ?? u;
   }
 
   @override
   void initState() {
     super.initState();
+    // Sur le Web, le mode mediaPlayer améliore la compatibilité avec les URLs distantes
+    if (kIsWeb) {
+      _audioPlayer.setPlayerMode(PlayerMode.mediaPlayer);
+    }
     _audioPlayer.onPlayerStateChanged.listen((state) {
       if (mounted) {
         setState(() => _isPlaying = state == PlayerState.playing);
+      }
+    });
+    _audioPlayer.onDurationChanged.listen((d) {
+      if (mounted) {
+        setState(() => _duration = d);
+      }
+    });
+    _audioPlayer.onPositionChanged.listen((p) {
+      if (mounted) {
+        setState(() => _position = p);
       }
     });
   }
@@ -53,14 +69,32 @@ class _MeditationDetailScreenState extends State<MeditationDetailScreen> {
       if (_isPlaying) {
         await _audioPlayer.pause();
       } else {
-        await _audioPlayer.play(UrlSource(url));
+        await _audioPlayer.setSource(UrlSource(url));
+        await _audioPlayer.resume();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Audio: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Lecture impossible: $e'),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: 'Ouvrir dans le navigateur',
+              textColor: Colors.white,
+              onPressed: () => _openAudioInBrowser(),
+            ),
+          ),
         );
       }
+    }
+  }
+
+  Future<void> _openAudioInBrowser() async {
+    final url = _fullAudioUrl;
+    if (url.isEmpty) return;
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -126,7 +160,11 @@ class _MeditationDetailScreenState extends State<MeditationDetailScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '${meditation.duration} min',
+                        meditation.duration > 0
+                            ? '${meditation.duration} min'
+                            : (_duration.inMinutes > 0
+                                ? '${_duration.inMinutes} min'
+                                : 'Durée inconnue'),
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -194,7 +232,18 @@ class _MeditationDetailScreenState extends State<MeditationDetailScreen> {
     );
   }
 
+  String _formatDuration(Duration d) {
+    final minutes = d.inMinutes;
+    final seconds = d.inSeconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
   Widget _buildAudioPlayer() {
+    final totalSeconds =
+        _duration.inSeconds > 0 ? _duration.inSeconds.toDouble() : 0.0;
+    final positionSeconds =
+        _position.inSeconds.clamp(0, _duration.inSeconds).toDouble();
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -202,37 +251,86 @@ class _MeditationDetailScreenState extends State<MeditationDetailScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: primaryColor.withOpacity(0.3)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.audiotrack, color: primaryColor, size: 32),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Audio de méditation',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: primaryColor,
-                  ),
+          Row(
+            children: [
+              Icon(Icons.audiotrack, color: primaryColor, size: 32),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Audio de méditation',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _isPlaying ? 'Lecture en cours...' : 'Appuyez pour lire',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  _isPlaying ? 'Lecture en cours...' : 'Appuyez pour lire',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade700,
-                  ),
+              ),
+              IconButton.filled(
+                onPressed: _toggleAudio,
+                icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
+                color: Colors.white,
+                style: IconButton.styleFrom(backgroundColor: primaryColor),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (totalSeconds > 0)
+            Column(
+              children: [
+                Slider(
+                  min: 0,
+                  max: totalSeconds,
+                  value: positionSeconds,
+                  activeColor: primaryColor,
+                  onChanged: (value) async {
+                    final newPosition = Duration(seconds: value.toInt());
+                    await _audioPlayer.seek(newPosition);
+                  },
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _formatDuration(_position),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                    Text(
+                      _formatDuration(_duration),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ),
-          IconButton.filled(
-            onPressed: _toggleAudio,
-            icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
-            color: Colors.white,
-            style: IconButton.styleFrom(backgroundColor: primaryColor),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: _openAudioInBrowser,
+            icon: const Icon(Icons.open_in_browser, size: 18),
+            label: const Text('Ouvrir l\'audio dans le navigateur'),
+            style: TextButton.styleFrom(
+              foregroundColor: primaryColor,
+            ),
           ),
         ],
       ),
