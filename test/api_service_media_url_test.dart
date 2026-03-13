@@ -14,17 +14,17 @@ void main() {
       expect(ApiService.mediaUrl(url), url);
     });
 
-    test('builds serve-storage URL for relative path', () {
+    test('builds storage URL for relative path', () {
       final r = ApiService.mediaUrl('retreat-plans/abc.jpg');
       expect(r, isNotNull);
-      expect(r!.contains('serve-storage/retreat-plans/abc.jpg'), isTrue);
+      expect(r!.contains('storage/retreat-plans/abc.jpg'), isTrue);
       expect(r.startsWith('https://'), isTrue);
     });
 
-    test('strips storage/ prefix when building URL', () {
+    test('keeps storage/ path when building URL', () {
       final r = ApiService.mediaUrl('storage/events/gallery/xyz.png');
       expect(r, isNotNull);
-      expect(r!.contains('serve-storage/events/gallery/xyz.png'), isTrue);
+      expect(r!.contains('storage/events/gallery/xyz.png'), isTrue);
       expect(r!.contains('storage/storage/'), isFalse);
     });
   });
